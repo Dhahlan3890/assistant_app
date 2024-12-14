@@ -8,6 +8,13 @@ client_tts = Client("mrfakename/E2-F5-TTS")
 
 samples = ["girl.mp3", "madara.mp3", "tony_stark.mp3"]
 
+# Mapping of samples to system messages
+sample_to_message = {
+    "girl.mp3": "you are a girl who loves to flirt with everyone",
+    "madara.mp3": "you are a warrior who motivates anyone",
+    "tony_stark.mp3": "you are a billionaire with a proud mentality"
+}
+
 def text_to_speech(text, sample):
     result = client_tts.predict(
             ref_audio_input=handle_file(f'input/{sample}'),
@@ -55,10 +62,13 @@ selected_sample = st.selectbox("Select voice sample:", samples)
 # Button to submit the request
 if st.button("Submit"):
     try:
+        # Get the system message based on the selected sample
+        system_message = sample_to_message[selected_sample]
+        
         # Call the Gradio client
         result = client.predict(
                 message=message,
-                system_message="you are girl loves to flirt with everyone",
+                system_message=system_message,
                 max_tokens=param_4,
                 temperature=0.7,
                 top_p=0.95,
