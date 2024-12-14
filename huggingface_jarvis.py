@@ -6,7 +6,7 @@ from gradio_client import Client, handle_file
 
 client_tts = Client("mrfakename/E2-F5-TTS")
 
-samples = ["girl.mp3", "madara.mp3", "tony_stark.mp3"]
+samples = ["girl", "madara", "tony_stark"]
 
 # Mapping of samples to system messages
 sample_to_message = {
@@ -17,7 +17,7 @@ sample_to_message = {
 
 def text_to_speech(text, sample):
     result = client_tts.predict(
-            ref_audio_input=handle_file(f'input/{sample}'),
+            ref_audio_input=handle_file(f'input/{sample}.mp3'),
             ref_text_input="",
             gen_text_input=text,
             remove_silence=False,
