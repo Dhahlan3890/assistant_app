@@ -6,9 +6,11 @@ from gradio_client import Client, handle_file
 
 client_tts = Client("mrfakename/E2-F5-TTS")
 
-def text_to_speech(text):
+samples = ["girl.mp3", "madara.mp3", "tony_stark.mp3"]
+
+def text_to_speech(text, sample):
     result = client_tts.predict(
-            ref_audio_input=handle_file('input/voice_sample.mp3'),
+            ref_audio_input=handle_file(f'input/{sample}'),
             ref_text_input="",
             gen_text_input=text,
             remove_silence=False,
@@ -21,7 +23,6 @@ def text_to_speech(text):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
     
-
 
 engine = pyttsx3.init()
 
@@ -36,7 +37,6 @@ engine.setProperty('voice', voices[1].id)
 
 engine.setProperty('rate', 140)
 
-from gradio_client import Client
 # Initialize Gradio Client
 client = Client("suayptalha/Chat-with-FastLlama")
 
@@ -49,11 +49,13 @@ message = st.text_input("Enter your message:", "Hello!!")
 # Additional parameters
 param_4 = st.number_input("Param 4 (Max Tokens):", min_value=1, max_value=1024, value=512)
 
+# Dropdown to select voice sample
+selected_sample = st.selectbox("Select voice sample:", samples)
+
 # Button to submit the request
 if st.button("Submit"):
     try:
         # Call the Gradio client
-
         result = client.predict(
                 message=message,
                 system_message="you are girl loves to flirt with everyone",
@@ -66,7 +68,7 @@ if st.button("Submit"):
         st.success("Response from the model:")
         st.write(result)
         # Convert text to speech
-        text_to_speech(result)
+        text_to_speech(result, selected_sample)
     except Exception as e:
         # Handle errors
         st.error(f"An error occurred: {e}")
