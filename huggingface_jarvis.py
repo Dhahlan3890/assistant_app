@@ -1,5 +1,4 @@
 import streamlit as st
-import pyttsx3
 import os
 import requests
 from gradio_client import Client, handle_file
@@ -31,19 +30,6 @@ def text_to_speech(text, sample):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
     
-
-engine = pyttsx3.init()
-
-def talk(text):
-    """Convert text to speech."""
-    engine.say(text)
-    engine.runAndWait()
-
-voices = engine.getProperty('voices')
-
-engine.setProperty('voice', voices[1].id)
-
-engine.setProperty('rate', 140)
 
 # Initialize Gradio Client
 client = Client("suayptalha/Chat-with-FastLlama")
