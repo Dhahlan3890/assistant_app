@@ -4,15 +4,20 @@ import os
 import requests
 from gradio_client import Client, handle_file
 
+# check if system is linux and sudo apt install espeak-ng
+if os.name == 'posix':
+    os.system('sudo apt install espeak-ng')
+
+
 client_tts = Client("mrfakename/E2-F5-TTS")
 
 samples = ["girl", "madara", "tony_stark"]
 
 # Mapping of samples to system messages
 sample_to_message = {
-    "girl.mp3": "you are a girl who loves to flirt with everyone",
-    "madara.mp3": "you are a warrior who motivates anyone",
-    "tony_stark.mp3": "you are a billionaire with a proud mentality"
+    "girl": "you are a girl who loves to flirt with everyone",
+    "madara": "you are a warrior who motivates anyone",
+    "tony_stark": "you are a billionaire with a proud mentality"
 }
 
 def text_to_speech(text, sample):
