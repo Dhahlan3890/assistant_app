@@ -3,18 +3,6 @@ import pyttsx3
 import os
 import requests
 from gradio_client import Client, handle_file
-import subprocess
-
-if os.name == 'posix':
-    try:
-        # Command to install espeak-ng
-        command = ["sudo", "apt", "install", "-y", "espeak-ng"]
-        
-        # Execute the command
-        subprocess.run(command, check=True)
-        print("eSpeak-ng installed successfully!")
-    except subprocess.CalledProcessError as e:
-        print("Error occurred while installing eSpeak-ng:", e)
 
 
 client_tts = Client("mrfakename/E2-F5-TTS")
