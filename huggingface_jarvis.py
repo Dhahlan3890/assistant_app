@@ -12,7 +12,7 @@ client_tts = Client("mrfakename/E2-F5-TTS")
 client_chat = Client("suayptalha/Chat-with-FastLlama")
 
 # Mapping of samples to system messages
-samples = ["girl", "madara", "tony_stark", "tobi", "obito", "deadpool"]
+samples = ["madara", "girl", "tony_stark", "tobi", "obito", "deadpool"]
 
 sample_to_message = {
     "girl": """you are a girl who loves to flirt with everyone.
