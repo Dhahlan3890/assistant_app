@@ -1,7 +1,6 @@
 import streamlit as st
-import os
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase, WebRtcMode
 from gradio_client import Client, handle_file
-import speech_recognition as sr
 
 # Initialize session state for chat history
 if "messages" not in st.session_state:
@@ -48,37 +47,16 @@ sample_to_message = {
     """
 }
 
-# Function to transcribe audio from the microphone
-def transcribe_audio_from_mic():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Calibrating microphone, please wait...")
-        recognizer.adjust_for_ambient_noise(source, duration=2)
-        st.write("Microphone calibrated. Start speaking!")
-        
-        try:
-            audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=5)
-            text = recognizer.recognize_google(audio_data)
-            return text
-        except sr.UnknownValueError:
-            return "Google Speech Recognition could not understand audio."
-        except sr.RequestError as e:
-            return f"Could not request results from Google Speech Recognition service; {e}"
+class AudioProcessor(AudioProcessorBase):
+    """Custom audio processor to handle real-time audio."""
+    def __init__(self):
+        self.transcribed_text = None
 
-# Function to convert text to speech
-def text_to_speech(text, sample):
-    result = client_tts.predict(
-        ref_audio_input=handle_file(f'input/{sample}.mp3'),
-        ref_text_input="",
-        gen_text_input=text,
-        remove_silence=False,
-        cross_fade_duration_slider=0.15,
-        speed_slider=1,
-        api_name="/basic_tts"
-    )
-    audio_file = open(result[0], "rb")
-    audio_bytes = audio_file.read()
-    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+    def recv(self, frame):
+        # Handle real-time audio processing and transcription
+        # Example: Use a speech-to-text model here
+        self.transcribed_text = "Mock Transcription"  # Replace with actual transcription logic
+        return frame
 
 # Streamlit app layout
 st.title("Interactive Chat with Streamlit")
@@ -103,16 +81,12 @@ if interaction_mode == "Text Input":
     with st.form(key="text_input_form"):
         user_input = st.text_input("Enter your message:")
         submit_button = st.form_submit_button("Send")
-    
+
     if submit_button and user_input:
-        # Display user message in chat
         st.session_state.messages.append({"role": "user", "content": user_input})
-        
-        # Generate system message
         system_message = sample_to_message[selected_sample]
-        
+
         try:
-            # Get response from the model
             response = client_chat.predict(
                 message=user_input,
                 system_message=system_message,
@@ -121,43 +95,36 @@ if interaction_mode == "Text Input":
                 top_p=0.95,
                 api_name="/chat"
             )
-            
-            # Display bot response in chat
             st.session_state.messages.append({"role": "bot", "content": response})
-            
-            # Convert response to speech
-            text_to_speech(response, selected_sample)
         except Exception as e:
             st.error(f"An error occurred: {e}")
 
 elif interaction_mode == "Microphone Input":
-    if st.button("Start Recording"):
-        st.write("Recording...")
-        user_input = transcribe_audio_from_mic()
-        st.write(f"Transcribed text: {user_input}")
-        
-        if user_input:
-            # Display user message in chat
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            
-            # Generate system message
+    st.write("Using microphone input...")
+    webrtc_ctx = webrtc_streamer(
+        key="speech",
+        mode=WebRtcMode.SENDONLY,
+        audio_processor_factory=AudioProcessor,
+        media_stream_constraints={"audio": True, "video": False},
+    )
+
+    if webrtc_ctx.audio_processor:
+        transcription = webrtc_ctx.audio_processor.transcribed_text
+        if transcription:
+            st.write(f"Transcribed text: {transcription}")
+            st.session_state.messages.append({"role": "user", "content": transcription})
+
             system_message = sample_to_message[selected_sample]
-            
+
             try:
-                # Get response from the model
                 response = client_chat.predict(
-                    message=user_input,
+                    message=transcription,
                     system_message=system_message,
                     max_tokens=param_4,
                     temperature=0.7,
                     top_p=0.95,
                     api_name="/chat"
                 )
-                
-                # Display bot response in chat
                 st.session_state.messages.append({"role": "bot", "content": response})
-                
-                # Convert response to speech
-                text_to_speech(response, selected_sample)
             except Exception as e:
                 st.error(f"An error occurred: {e}")
