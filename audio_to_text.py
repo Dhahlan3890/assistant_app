@@ -1,26 +1,21 @@
-import whisper
-import sounddevice as sd
-import numpy as np
-import scipy.io.wavfile as wav
+import speech_recognition as sr
 
-# record audio from the user
-def record_audio_and_transcribe():
-    # Record audio
-    fs = 44100  # Sample rate
-    duration = 5  # Duration in seconds
-    print("Recording...")
-    audio = sd.rec(int(duration * fs), samplerate=fs, channels=2, dtype='int16')
-    sd.wait()  # Wait until recording is finished
-    print("Recording finished.")
-    
-    # Save the audio to a file
-    wav.write("output.wav", fs, audio)
-    
-    # Load the whisper model
-    model = whisper.load_model("base")
-    
-    # Transcribe the audio file
-    result = model.transcribe("output.wav")
-    return result["text"]
+# transcribe audio from microphone
+def transcribe_audio_from_mic():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Please wait. Calibrating microphone...")
+        recognizer.adjust_for_ambient_noise(source, duration=5)
+        print("Microphone calibrated. Start speaking.")
+        
+        audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=3)
+        
+        try:
+            text = recognizer.recognize_google(audio_data)
+            return text
+        except sr.UnknownValueError:
+            return "Google Speech Recognition could not understand audio"
+        except sr.RequestError as e:
+            return f"Could not request results from Google Speech Recognition service; {e}"
 
-print(record_audio_and_transcribe())
+print(transcribe_audio_from_mic())
