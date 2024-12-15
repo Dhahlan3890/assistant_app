@@ -96,7 +96,7 @@ st.title("Interactive Chat with Streamlit")
 with st.sidebar:
     st.header("Settings")
     selected_sample = st.selectbox("Select Voice Sample", samples)
-    param_4 = st.slider("Max Tokens", min_value=1, max_value=1024, value=512)
+    param_4 = st.slider("Max Tokens", min_value=1, max_value=1024, value=256)
     interaction_mode = st.radio("Interaction Mode", ["Text Input", "Microphone Input"])
 
 # Display chat history
