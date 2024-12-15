@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import requests
 from gradio_client import Client, handle_file
 import speech_recognition as sr
 
@@ -52,16 +53,17 @@ sample_to_message = {
 def transcribe_audio_from_mic():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        st.write("Calibrating microphone, please wait...")
-        recognizer.adjust_for_ambient_noise(source, duration=2)
-        st.write("Microphone calibrated. Start speaking!")
+        st.write("Please wait. Calibrating microphone...")
+        recognizer.adjust_for_ambient_noise(source, duration=5)
+        st.write("Microphone calibrated. Start speaking.")
+        
+        audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=3)
         
         try:
-            audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=5)
             text = recognizer.recognize_google(audio_data)
             return text
         except sr.UnknownValueError:
-            return "Google Speech Recognition could not understand audio."
+            return "Google Speech Recognition could not understand audio"
         except sr.RequestError as e:
             return f"Could not request results from Google Speech Recognition service; {e}"
 
@@ -81,14 +83,13 @@ def text_to_speech(text, sample):
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
 # Streamlit app layout
-st.title("Interactive Chat with Streamlit")
+st.title("ChatGPT-like Interface with Streamlit")
 
 # Sidebar for selecting voice sample
 with st.sidebar:
     st.header("Settings")
     selected_sample = st.selectbox("Select Voice Sample", samples)
     param_4 = st.slider("Max Tokens", min_value=1, max_value=1024, value=512)
-    interaction_mode = st.radio("Interaction Mode", ["Text Input", "Microphone Input"])
 
 # Display chat history
 st.write("### Chat History")
@@ -98,66 +99,34 @@ for msg in st.session_state.messages:
     else:
         st.write(f"**Bot ({selected_sample}):** {msg['content']}")
 
-# Interaction based on selected mode
-if interaction_mode == "Text Input":
-    with st.form(key="text_input_form"):
-        user_input = st.text_input("Enter your message:")
-        submit_button = st.form_submit_button("Send")
-    
-    if submit_button and user_input:
-        # Display user message in chat
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        
-        # Generate system message
-        system_message = sample_to_message[selected_sample]
-        
-        try:
-            # Get response from the model
-            response = client_chat.predict(
-                message=user_input,
-                system_message=system_message,
-                max_tokens=param_4,
-                temperature=0.7,
-                top_p=0.95,
-                api_name="/chat"
-            )
-            
-            # Display bot response in chat
-            st.session_state.messages.append({"role": "bot", "content": response})
-            
-            # Convert response to speech
-            text_to_speech(response, selected_sample)
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+# User input
+with st.form(key="chat_form"):
+    user_input = st.text_input("Enter your message:", "")
+    submit_button = st.form_submit_button("Send")
 
-elif interaction_mode == "Microphone Input":
-    if st.button("Start Recording"):
-        st.spinner("Recording...")
-        user_input = transcribe_audio_from_mic()
-        st.write(f"Transcribed text: {user_input}")
+# Handle user input
+if submit_button and user_input:
+    # Display user message in chat
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    
+    # Generate system message based on selected sample
+    system_message = sample_to_message[selected_sample]
+    
+    try:
+        # Get response from the model
+        response = client_chat.predict(
+            message=user_input,
+            system_message=system_message,
+            max_tokens=param_4,
+            temperature=0.7,
+            top_p=0.95,
+            api_name="/chat"
+        )
         
-        if user_input:
-            # Display user message in chat
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            
-            # Generate system message
-            system_message = sample_to_message[selected_sample]
-            
-            try:
-                # Get response from the model
-                response = client_chat.predict(
-                    message=user_input,
-                    system_message=system_message,
-                    max_tokens=param_4,
-                    temperature=0.7,
-                    top_p=0.95,
-                    api_name="/chat"
-                )
-                
-                # Display bot response in chat
-                st.session_state.messages.append({"role": "bot", "content": response})
-                
-                # Convert response to speech
-                text_to_speech(response, selected_sample)
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+        # Display bot response in chat
+        st.session_state.messages.append({"role": "bot", "content": response})
+        
+        # Convert response to speech
+        text_to_speech(response, selected_sample)
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
