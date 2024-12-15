@@ -119,8 +119,8 @@ if interaction_mode == "Text Input":
                 message=user_input,
                 system_message=system_message,
                 max_tokens=param_4,
-                temperature=0.6,
-                top_p=0.8,
+                temperature=0.7,
+                top_p=0.95,
                 api_name="/chat"
             )
             
