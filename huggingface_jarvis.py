@@ -1,16 +1,7 @@
 import streamlit as st
 import os
 import requests
-import whishper
 from gradio_client import Client, handle_file
-
-# record audio from the user
-def record_audio_and_transcribe():
-    # Record audio
-    audio = whishper.Audio.record()
-    # Save the audio to a file
-    text = audio.transcribe()
-    return text
 
 
 client_tts = Client("mrfakename/E2-F5-TTS")
