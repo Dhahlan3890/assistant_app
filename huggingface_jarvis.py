@@ -9,7 +9,8 @@ if "messages" not in st.session_state:
 
 # Initialize Gradio Clients
 client_tts = Client("mrfakename/E2-F5-TTS")
-client_chat = Client("suayptalha/Chat-with-FastLlama")
+# client_chat = Client("suayptalha/Chat-with-FastLlama")
+client_chat = Client("Dhahlan2000/dechat_space_zero")
 
 # Mapping of samples to system messages
 samples = ["madara", "girl", "tony_stark", "tobi", "obito", "deadpool"]
