@@ -2,6 +2,10 @@ import streamlit as st
 import os
 from gradio_client import Client, handle_file
 import speech_recognition as sr
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+import av
+import queue
+import threading
 
 # Initialize session state for chat history
 if "messages" not in st.session_state:
@@ -108,22 +112,12 @@ sample_to_message = {
 
 }
 
-# Function to transcribe audio from the microphone
-def transcribe_audio_from_mic():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Calibrating microphone, please wait...")
-        recognizer.adjust_for_ambient_noise(source, duration=2)
-        st.write("Microphone calibrated. Start speaking!")
-        
-        try:
-            audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=5)
-            text = recognizer.recognize_google(audio_data)
-            return text
-        except sr.UnknownValueError:
-            return "Google Speech Recognition could not understand audio."
-        except sr.RequestError as e:
-            return f"Could not request results from Google Speech Recognition service; {e}"
+# Add these after your other initializations
+if "audio_queue" not in st.session_state:
+    st.session_state.audio_queue = queue.Queue()
+
+if "recording" not in st.session_state:
+    st.session_state.recording = False
 
 # Function to convert text to speech
 def text_to_speech(text, sample):
@@ -191,33 +185,81 @@ if interaction_mode == "Text Input":
             st.error(f"An error occurred: {e}")
 
 elif interaction_mode == "Microphone Input":
-    if st.button("Start Recording"):
-        st.write("Recording...")
-        user_input = transcribe_audio_from_mic()
-        st.write(f"Transcribed text: {user_input}")
-        
-        if user_input:
-            # Display user message in chat
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            
-            # Generate system message
-            system_message = sample_to_message[selected_sample]
-            
+    st.write("Click 'Start' below and speak into your microphone")
+    
+    # WebRTC configuration
+    rtc_configuration = RTCConfiguration(
+        {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    )
+    
+    # Create a WebRTC streamer
+    webrtc_ctx = webrtc_streamer(
+        key="speech-to-text",
+        mode=WebRtcMode.SENDONLY,
+        audio_receiver_size=1024,
+        rtc_configuration=rtc_configuration,
+        media_stream_constraints={"video": False, "audio": True},
+    )
+    
+    if webrtc_ctx.audio_receiver:
+        while True:
             try:
-                # Get response from the model
-                response = client_chat.predict(
-                    message=user_input,
-                    system_message=system_message,
-                    max_tokens=param_4,
-                    temperature=0.7,
-                    top_p=0.95,
-                    api_name="/chat"
-                )
+                audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=1)
+                for audio_frame in audio_frames:
+                    process_audio(audio_frame)
                 
-                # Display bot response in chat
-                st.session_state.messages.append({"role": "bot", "content": response})
-                
-                # Convert response to speech
-                text_to_speech(response, selected_sample)
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+                # Check if we have any transcribed text
+                try:
+                    text = st.session_state.audio_queue.get_nowait()
+                    if text:
+                        # Display user message in chat
+                        st.session_state.messages.append({"role": "user", "content": text})
+                        
+                        # Generate system message
+                        system_message = sample_to_message[selected_sample]
+                        
+                        try:
+                            # Get response from the model
+                            response = client_chat.predict(
+                                message=text,
+                                system_message=system_message,
+                                max_tokens=param_4,
+                                temperature=0.7,
+                                top_p=0.95,
+                                api_name="/chat"
+                            )
+                            
+                            # Display bot response in chat
+                            st.session_state.messages.append({"role": "bot", "content": response})
+                            
+                            # Convert response to speech
+                            text_to_speech(response, selected_sample)
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+                except queue.Empty:
+                    continue
+            except queue.Empty:
+                continue
+
+# Replace the transcribe_audio_from_mic function with this
+def process_audio(frame):
+    try:
+        # Convert audio frame to numpy array
+        audio_data = frame.to_ndarray()
+        
+        # Create recognizer instance
+        recognizer = sr.Recognizer()
+        
+        # Convert numpy array to audio data
+        audio_segment = sr.AudioData(
+            audio_data.tobytes(),
+            sample_rate=frame.sample_rate,
+            sample_width=audio_data.dtype.itemsize
+        )
+        
+        # Perform speech recognition
+        text = recognizer.recognize_google(audio_segment)
+        if text:
+            st.session_state.audio_queue.put(text)
+    except Exception as e:
+        pass
