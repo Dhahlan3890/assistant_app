@@ -1,16 +1,18 @@
 import streamlit as st
 import os
 from gradio_client import Client, handle_file
+from huggingface_hub import login
 import speech_recognition as sr
 
+login(token="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")
 # Initialize session state for chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Initialize Gradio Clients
-client_tts = Client("mrfakename/E2-F5-TTS", token="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")
-# client_chat = Client("suayptalha/Chat-with-FastLlama", token="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")
-client_chat = Client("Dhahlan2000/dechat_space_zero", token="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")
+client_tts = Client("mrfakename/E2-F5-TTS")
+# client_chat = Client("suayptalha/Chat-with-FastLlama")
+client_chat = Client("Dhahlan2000/dechat_space_zero")
 
 # Mapping of samples to system messages
 samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
