@@ -198,7 +198,7 @@ if interaction_mode == "Text Input":
                 if msg["role"] == "user":
                     conversation += f"User: {msg['content']}\n"
                 else:
-                    conversation += f"{msg['character']}: {msg['content']}\n"
+                    conversation += f"Assistant: {msg['content']}\n"
             conversation += f"User: {user_input}\n"
             
             # Show "thinking" spinner while generating response
@@ -216,12 +216,8 @@ if interaction_mode == "Text Input":
             with st.chat_message("bot", avatar="🎭"):
                 st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
             
-            # Update conversation history with character information
-            st.session_state.conversation_history.append({
-                "role": "user", 
-                "content": user_input
-            })
-            st.session_state.conversation_history.append({
+            # Update conversation history
+            st.session_state.messages.append({
                 "role": "bot", 
                 "content": response,
                 "character": get_character_name(selected_sample)
@@ -254,7 +250,7 @@ elif interaction_mode == "Microphone Input":
                     if msg["role"] == "user":
                         conversation += f"User: {msg['content']}\n"
                     else:
-                        conversation += f"{msg['character']}: {msg['content']}\n"
+                        conversation += f"Assistant: {msg['content']}\n"
                 conversation += f"User: {user_input}\n"
                 
                 # Show "thinking" spinner while generating response
@@ -272,12 +268,8 @@ elif interaction_mode == "Microphone Input":
                 with st.chat_message("bot", avatar="🎭"):
                     st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
                 
-                # Update conversation history with character information
-                st.session_state.conversation_history.append({
-                    "role": "user", 
-                    "content": user_input
-                })
-                st.session_state.conversation_history.append({
+                # Update conversation history
+                st.session_state.messages.append({
                     "role": "bot", 
                     "content": response,
                     "character": get_character_name(selected_sample)
