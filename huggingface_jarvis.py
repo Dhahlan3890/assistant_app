@@ -157,10 +157,8 @@ with st.sidebar:
 # Display chat history
 st.write("### Chat History")
 for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.write(f"**You:** {msg['content']}")
-    else:
-        st.write(f"**Bot ({selected_sample}):** {msg['content']}")
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
 # Interaction based on selected mode
 if interaction_mode == "Text Input":
@@ -169,7 +167,9 @@ if interaction_mode == "Text Input":
         submit_button = st.form_submit_button("Send")
     
     if submit_button and user_input:
-        # Display user message in chat
+        # Show user message immediately
+        with st.chat_message("user"):
+            st.write(user_input)
         st.session_state.messages.append({"role": "user", "content": user_input})
         
         # Generate system message
@@ -185,17 +185,22 @@ if interaction_mode == "Text Input":
                     conversation += f"Assistant: {msg['content']}\n"
             conversation += f"User: {user_input}\n"
             
-            # Get response from the model
-            response = client_chat.predict(
-                message=conversation,  # Send full conversation instead of just user_input
-                system_message=system_message,
-                max_tokens=param_4,
-                temperature=0.7,
-                top_p=0.95,
-                api_name="/chat"
-            )
+            # Show "thinking" spinner while generating response
+            with st.spinner("Thinking..."):
+                response = client_chat.predict(
+                    message=conversation,
+                    system_message=system_message,
+                    max_tokens=param_4,
+                    temperature=0.7,
+                    top_p=0.95,
+                    api_name="/chat"
+                )
             
-            # Update both message displays and conversation history
+            # Show bot response immediately
+            with st.chat_message("bot"):
+                st.write(response)
+            
+            # Update conversation history
             st.session_state.messages.append({"role": "bot", "content": response})
             st.session_state.conversation_history.append({"role": "user", "content": user_input})
             st.session_state.conversation_history.append({"role": "bot", "content": response})
@@ -212,7 +217,9 @@ elif interaction_mode == "Microphone Input":
         st.write(f"Transcribed text: {user_input}")
         
         if user_input:
-            # Display user message in chat
+            # Show user message immediately
+            with st.chat_message("user"):
+                st.write(user_input)
             st.session_state.messages.append({"role": "user", "content": user_input})
             
             # Generate system message
@@ -228,17 +235,22 @@ elif interaction_mode == "Microphone Input":
                         conversation += f"Assistant: {msg['content']}\n"
                 conversation += f"User: {user_input}\n"
                 
-                # Get response from the model
-                response = client_chat.predict(
-                    message=conversation,  # Send full conversation instead of just user_input
-                    system_message=system_message,
-                    max_tokens=param_4,
-                    temperature=0.7,
-                    top_p=0.95,
-                    api_name="/chat"
-                )
+                # Show "thinking" spinner while generating response
+                with st.spinner("Thinking..."):
+                    response = client_chat.predict(
+                        message=conversation,
+                        system_message=system_message,
+                        max_tokens=param_4,
+                        temperature=0.7,
+                        top_p=0.95,
+                        api_name="/chat"
+                    )
                 
-                # Update both message displays and conversation history
+                # Show bot response immediately
+                with st.chat_message("bot"):
+                    st.write(response)
+                
+                # Update conversation history
                 st.session_state.messages.append({"role": "bot", "content": response})
                 st.session_state.conversation_history.append({"role": "user", "content": user_input})
                 st.session_state.conversation_history.append({"role": "bot", "content": response})
