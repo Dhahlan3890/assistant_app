@@ -8,6 +8,8 @@ login(token="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")
 # Initialize session state for chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+    # Add a new list to store the actual conversation history for the model
+    st.session_state.conversation_history = []
 
 # Initialize Gradio Clients
 client_tts = Client("mrfakename/E2-F5-TTS")
@@ -174,9 +176,18 @@ if interaction_mode == "Text Input":
         system_message = sample_to_message[selected_sample]
         
         try:
+            # Build conversation history string
+            conversation = ""
+            for msg in st.session_state.conversation_history:
+                if msg["role"] == "user":
+                    conversation += f"User: {msg['content']}\n"
+                else:
+                    conversation += f"Assistant: {msg['content']}\n"
+            conversation += f"User: {user_input}\n"
+            
             # Get response from the model
             response = client_chat.predict(
-                message=user_input,
+                message=conversation,  # Send full conversation instead of just user_input
                 system_message=system_message,
                 max_tokens=param_4,
                 temperature=0.7,
@@ -184,8 +195,10 @@ if interaction_mode == "Text Input":
                 api_name="/chat"
             )
             
-            # Display bot response in chat
+            # Update both message displays and conversation history
             st.session_state.messages.append({"role": "bot", "content": response})
+            st.session_state.conversation_history.append({"role": "user", "content": user_input})
+            st.session_state.conversation_history.append({"role": "bot", "content": response})
             
             # Convert response to speech
             text_to_speech(response, selected_sample)
@@ -206,9 +219,18 @@ elif interaction_mode == "Microphone Input":
             system_message = sample_to_message[selected_sample]
             
             try:
+                # Build conversation history string
+                conversation = ""
+                for msg in st.session_state.conversation_history:
+                    if msg["role"] == "user":
+                        conversation += f"User: {msg['content']}\n"
+                    else:
+                        conversation += f"Assistant: {msg['content']}\n"
+                conversation += f"User: {user_input}\n"
+                
                 # Get response from the model
                 response = client_chat.predict(
-                    message=user_input,
+                    message=conversation,  # Send full conversation instead of just user_input
                     system_message=system_message,
                     max_tokens=param_4,
                     temperature=0.7,
@@ -216,8 +238,10 @@ elif interaction_mode == "Microphone Input":
                     api_name="/chat"
                 )
                 
-                # Display bot response in chat
+                # Update both message displays and conversation history
                 st.session_state.messages.append({"role": "bot", "content": response})
+                st.session_state.conversation_history.append({"role": "user", "content": user_input})
+                st.session_state.conversation_history.append({"role": "bot", "content": response})
                 
                 # Convert response to speech
                 text_to_speech(response, selected_sample)
