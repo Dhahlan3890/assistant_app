@@ -4,7 +4,7 @@ from gradio_client import Client, handle_file
 from huggingface_hub import login
 import speech_recognition as sr
 
-login(token="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")
+login(token="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", add_to_git_credential=True)
 # Initialize session state for chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
