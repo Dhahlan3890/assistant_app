@@ -198,7 +198,7 @@ if interaction_mode == "Text Input":
                 if msg["role"] == "user":
                     conversation += f"User: {msg['content']}\n"
                 else:
-                    conversation += f"Assistant ({get_character_name(selected_sample)}): {msg['content']}\n"
+                    conversation += f"Assistant: {msg['content']}\n"
             conversation += f"User: {user_input}\n"
             
             # Show "thinking" spinner while generating response
