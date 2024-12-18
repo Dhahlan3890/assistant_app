@@ -144,6 +144,19 @@ def text_to_speech(text, sample):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
+# Add a function to get character name from sample
+def get_character_name(sample):
+    character_names = {
+        "madara": "Madara Uchiha",
+        "flirty": "Flirty Girl",
+        "shy_girl": "Shy Girl",
+        "tony_stark": "Tony Stark",
+        "tobi": "Tobi",
+        "obito": "Obito Uchiha",
+        "deadpool": "Deadpool"
+    }
+    return character_names.get(sample, sample.title())
+
 # Streamlit app layout
 st.title("Interactive Chat with Streamlit")
 
@@ -157,8 +170,11 @@ with st.sidebar:
 # Display chat history
 st.write("### Chat History")
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+    with st.chat_message(msg["role"], avatar="👤" if msg["role"] == "user" else "🎭"):
+        if msg["role"] == "bot":
+            st.markdown(f"**{msg.get('character', get_character_name(selected_sample))}**: {msg['content']}")
+        else:
+            st.write(msg["content"])
 
 # Interaction based on selected mode
 if interaction_mode == "Text Input":
@@ -196,14 +212,16 @@ if interaction_mode == "Text Input":
                     api_name="/chat"
                 )
             
-            # Show bot response immediately
-            with st.chat_message("bot"):
-                st.write(response)
+            # Show bot response immediately with character name
+            with st.chat_message("bot", avatar="🎭"):
+                st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
             
             # Update conversation history
-            st.session_state.messages.append({"role": "bot", "content": response})
-            st.session_state.conversation_history.append({"role": "user", "content": user_input})
-            st.session_state.conversation_history.append({"role": "bot", "content": response})
+            st.session_state.messages.append({
+                "role": "bot", 
+                "content": response,
+                "character": get_character_name(selected_sample)
+            })
             
             # Convert response to speech
             text_to_speech(response, selected_sample)
@@ -246,14 +264,16 @@ elif interaction_mode == "Microphone Input":
                         api_name="/chat"
                     )
                 
-                # Show bot response immediately
-                with st.chat_message("bot"):
-                    st.write(response)
+                # Show bot response immediately with character name
+                with st.chat_message("bot", avatar="🎭"):
+                    st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
                 
                 # Update conversation history
-                st.session_state.messages.append({"role": "bot", "content": response})
-                st.session_state.conversation_history.append({"role": "user", "content": user_input})
-                st.session_state.conversation_history.append({"role": "bot", "content": response})
+                st.session_state.messages.append({
+                    "role": "bot", 
+                    "content": response,
+                    "character": get_character_name(selected_sample)
+                })
                 
                 # Convert response to speech
                 text_to_speech(response, selected_sample)
