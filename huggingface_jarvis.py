@@ -1,11 +1,7 @@
 import streamlit as st
-import os
 from gradio_client import Client, handle_file
 from huggingface_hub import login
-import speech_recognition as sr
-import streamlit as st
 from st_audiorec import st_audiorec
-from gradio_client import Client
 import io
 
 
@@ -244,19 +240,22 @@ elif interaction_mode == "Microphone Input":
         st.audio(wav_audio_data, format='audio/wav')
         
         # Transcribe audio directly from memory
-        # add spinner
-        with st.spinner("Transcribing audio..."):
-            transcription = transcribe_audio(client_s2t, wav_audio_data)
+        transcription = transcribe_audio(client_s2t, wav_audio_data)
         
         if transcription:
             st.write("Transcription:", transcription)
             user_input = transcription
 
-        if user_input:
-            # Show user message immediately
+        if transcription:
+            st.write("Transcription:", transcription)
+            # Update conversation history and generate response
+            st.session_state.conversation_history.append({"role": "user", "content": transcription})
             with st.chat_message("user"):
-                st.write(user_input)
-            st.session_state.messages.append({"role": "user", "content": user_input})
+                st.write(transcription)
+            st.session_state.messages.append({"role": "user", "content": transcription})
+
+            # Generate system message
+            system_message = sample_to_message[selected_sample]
             
             # Generate system message
             system_message = sample_to_message[selected_sample]
