@@ -11,6 +11,8 @@ import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.playback import play
 import os
+from gtts import gTTS
+
 
 # login(token="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")
 # Initialize session state for chat history
@@ -161,6 +163,12 @@ def text_to_speech(text, sample):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
+def text_to_speech_gtts(text):
+    tts = gTTS(text)
+    audio_file = "voice_output.mp3"
+    tts.save(audio_file)
+    return audio_file
+
 # Add a function to get character name from sample
 def get_character_name(sample):
     character_names = {
@@ -300,5 +308,68 @@ elif interaction_mode == "Microphone Input":
                 
                 # Convert response to speech
                 text_to_speech(response, selected_sample)
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+elif interaction_mode == "Continuous Microphone Input (Faster)":
+    # Record audio
+    wav_audio_data = st_audiorec()
+    if wav_audio_data is not None:
+        # Display audio player
+        st.audio(wav_audio_data, format='audio/wav')
+        
+        # Transcribe audio directly from memory
+        user_input = transcribe_audio(wav_audio_data)
+        
+        if user_input:
+            st.write("Transcription:", user_input)
+
+            # Show user message immediately
+            with st.chat_message("user"):
+                st.write(user_input)
+            st.session_state.messages.append({"role": "user", "content": user_input})
+            
+            # Generate system message
+            system_message = sample_to_message[selected_sample]
+            
+            try:
+                # Build conversation history string
+                conversation = ""
+                for msg in st.session_state.conversation_history:
+                    if msg["role"] == "user":
+                        conversation += f"User: {msg['content']}\n"
+                    else:
+                        conversation += f"Assistant: {msg['content']}\n"
+                conversation += f"User: {user_input}\n"
+                
+                # Show "thinking" spinner while generating response
+                with st.spinner("Thinking..."):
+                    response = client_chat.predict(
+                        message=conversation,
+                        system_message=system_message,
+                        max_tokens=param_4,
+                        temperature=0.7,
+                        top_p=0.95,
+                        api_name="/chat"
+                    )
+                
+                # Show bot response immediately with character name
+                with st.chat_message("bot", avatar="🎭"):
+                    st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
+                
+                # Update conversation history
+                st.session_state.messages.append({
+                    "role": "bot", 
+                    "content": response,
+                    "character": get_character_name(selected_sample)
+                })
+                
+                # Convert response to speech
+                audio_path = text_to_speech_gtts(response)
+                # Display audio
+                with open(audio_path, "rb") as audio:
+                    st.audio(audio.read(), format="audio/mp3", autoplay=True)
+                # Cleanup (optional)
+                os.remove(audio_path)
             except Exception as e:
                 st.error(f"An error occurred: {e}")
