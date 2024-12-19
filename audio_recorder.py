@@ -1,24 +1,20 @@
 import streamlit as st
 from st_audiorec import st_audiorec
-from gradio_client import Client, handle_file
-from pathlib import Path
+from gradio_client import Client
+import io
 
 # Constants
-AUDIO_FILENAME = "audio_sample.wav"
 WHISPER_API_URL = "mrfakename/fast-whisper-turbo"
 
-def save_audio(audio_data: bytes, filename: str) -> Path:
-    """Save audio data to a file and return the file path."""
-    file_path = Path(filename)
-    with open(file_path, "wb") as f:
-        f.write(audio_data)
-    return file_path
-
-def transcribe_audio(client: Client, audio_path: Path) -> str:
-    """Transcribe audio using the Whisper API."""
+def transcribe_audio(client: Client, audio_data: bytes) -> str:
+    """Transcribe audio data directly using the Whisper API."""
     try:
+        # Create a file-like object from bytes
+        audio_file = io.BytesIO(audio_data)
+        audio_file.name = "audio.wav"  # Some APIs need a filename
+        
         result = client.predict(
-            audio=handle_file(str(audio_path)),
+            audio=audio_file,
             task="transcribe",
             api_name="/transcribe"
         )
@@ -40,9 +36,8 @@ def main():
         # Display audio player
         st.audio(wav_audio_data, format='audio/wav')
         
-        # Save and transcribe audio
-        audio_path = save_audio(wav_audio_data, AUDIO_FILENAME)
-        transcription = transcribe_audio(client, audio_path)
+        # Transcribe audio directly from memory
+        transcription = transcribe_audio(client, wav_audio_data)
         
         if transcription:
             st.write("Transcription:", transcription)

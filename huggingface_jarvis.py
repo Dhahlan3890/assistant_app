@@ -1,11 +1,18 @@
 import streamlit as st
+# import os
 from gradio_client import Client, handle_file
-from huggingface_hub import login
+# from huggingface_hub import login
+# import speech_recognition as sr
+import streamlit as st
 from st_audiorec import st_audiorec
+from gradio_client import Client
 import io
+import speech_recognition as sr
+from pydub import AudioSegment
+from pydub.playback import play
+import os
 
-
-login(token="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")
+# login(token="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")
 # Initialize session state for chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -14,9 +21,9 @@ if "messages" not in st.session_state:
 
 # Initialize Gradio Clients
 client_tts = Client("mrfakename/E2-F5-TTS")
+client_whisper = Client("mrfakename/fast-whisper-turbo")
 # client_chat = Client("suayptalha/Chat-with-FastLlama")
 client_chat = Client("Dhahlan2000/dechat_space_zero")
-client_s2t = Client("mrfakename/fast-whisper-turbo")
 
 # Mapping of samples to system messages
 samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
@@ -110,27 +117,34 @@ sample_to_message = {
     - Your tone should be soft, gentle, and filled with a sense of quiet determination when you find your courage.
     - Do not include any body language or facial expressions in your response."""
 
-
-
 }
 
-# Function to transcribe audio from the microphone
-def transcribe_audio(client: Client, audio_data: bytes) -> str:
-    """Transcribe audio data directly using the Whisper API."""
+
+def transcribe_audio(audio_data: bytes) -> str:
+    """Transcribe audio using SpeechRecognition."""
+    recognizer = sr.Recognizer()
     try:
-        # Create a file-like object from bytes
+        # Convert byte data to a WAV file
         audio_file = io.BytesIO(audio_data)
-        audio_file.name = "audio.wav"  # Some APIs need a filename
-        
-        result = client.predict(
-            audio=audio_file,
-            task="transcribe",
-            api_name="/transcribe"
-        )
-        return result
-    except Exception as e:
-        st.error(f"Transcription error: {str(e)}")
-        return None
+        audio_file.name = "audio.wav"  # Necessary for some libraries
+        with open("temp_audio.wav", "wb") as temp_file:
+            temp_file.write(audio_file.read())
+
+        # Load the WAV file for transcription
+        with sr.AudioFile("temp_audio.wav") as source:
+            audio = recognizer.record(source)
+            transcription = recognizer.recognize_google(audio)  # Use Google's Web Speech API
+            return transcription
+    except sr.UnknownValueError:
+        return "Sorry, I could not understand the audio."
+    except sr.RequestError as e:
+        return f"Could not request results; {e}"
+    finally:
+        # Clean up temporary files
+        if os.path.exists("temp_audio.wav"):
+            os.remove("temp_audio.wav")
+
+
 
 # Function to convert text to speech
 def text_to_speech(text, sample):
@@ -234,28 +248,20 @@ if interaction_mode == "Text Input":
 elif interaction_mode == "Microphone Input":
     # Record audio
     wav_audio_data = st_audiorec()
-    
     if wav_audio_data is not None:
         # Display audio player
         st.audio(wav_audio_data, format='audio/wav')
         
         # Transcribe audio directly from memory
-        transcription = transcribe_audio(client_s2t, wav_audio_data)
+        user_input = transcribe_audio(wav_audio_data)
         
-        if transcription:
-            st.write("Transcription:", transcription)
-            user_input = transcription
+        if user_input:
+            st.write("Transcription:", user_input)
 
-        if transcription:
-            st.write("Transcription:", transcription)
-            # Update conversation history and generate response
-            st.session_state.conversation_history.append({"role": "user", "content": transcription})
+            # Show user message immediately
             with st.chat_message("user"):
-                st.write(transcription)
-            st.session_state.messages.append({"role": "user", "content": transcription})
-
-            # Generate system message
-            system_message = sample_to_message[selected_sample]
+                st.write(user_input)
+            st.session_state.messages.append({"role": "user", "content": user_input})
             
             # Generate system message
             system_message = sample_to_message[selected_sample]
