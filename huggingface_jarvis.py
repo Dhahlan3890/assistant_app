@@ -3,6 +3,11 @@ import os
 from gradio_client import Client, handle_file
 from huggingface_hub import login
 import speech_recognition as sr
+import streamlit as st
+from st_audiorec import st_audiorec
+from gradio_client import Client
+import io
+
 
 login(token="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")
 # Initialize session state for chat history
@@ -15,6 +20,7 @@ if "messages" not in st.session_state:
 client_tts = Client("mrfakename/E2-F5-TTS")
 # client_chat = Client("suayptalha/Chat-with-FastLlama")
 client_chat = Client("Dhahlan2000/dechat_space_zero")
+client_s2t = Client("mrfakename/fast-whisper-turbo")
 
 # Mapping of samples to system messages
 samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
@@ -113,21 +119,22 @@ sample_to_message = {
 }
 
 # Function to transcribe audio from the microphone
-def transcribe_audio_from_mic():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.write("Calibrating microphone, please wait...")
-        recognizer.adjust_for_ambient_noise(source, duration=2)
-        st.write("Microphone calibrated. Start speaking!")
+def transcribe_audio(client: Client, audio_data: bytes) -> str:
+    """Transcribe audio data directly using the Whisper API."""
+    try:
+        # Create a file-like object from bytes
+        audio_file = io.BytesIO(audio_data)
+        audio_file.name = "audio.wav"  # Some APIs need a filename
         
-        try:
-            audio_data = recognizer.listen(source, timeout=None, phrase_time_limit=5)
-            text = recognizer.recognize_google(audio_data)
-            return text
-        except sr.UnknownValueError:
-            return "Google Speech Recognition could not understand audio."
-        except sr.RequestError as e:
-            return f"Could not request results from Google Speech Recognition service; {e}"
+        result = client.predict(
+            audio=audio_file,
+            task="transcribe",
+            api_name="/transcribe"
+        )
+        return result
+    except Exception as e:
+        st.error(f"Transcription error: {str(e)}")
+        return None
 
 # Function to convert text to speech
 def text_to_speech(text, sample):
@@ -229,11 +236,22 @@ if interaction_mode == "Text Input":
             st.error(f"An error occurred: {e}")
 
 elif interaction_mode == "Microphone Input":
-    if st.button("Start Recording"):
-        st.write("Recording...")
-        user_input = transcribe_audio_from_mic()
-        st.write(f"Transcribed text: {user_input}")
+    # Record audio
+    wav_audio_data = st_audiorec()
+    
+    if wav_audio_data is not None:
+        # Display audio player
+        st.audio(wav_audio_data, format='audio/wav')
         
+        # Transcribe audio directly from memory
+        # add spinner
+        with st.spinner("Transcribing audio..."):
+            transcription = transcribe_audio(client_s2t, wav_audio_data)
+        
+        if transcription:
+            st.write("Transcription:", transcription)
+            user_input = transcription
+
         if user_input:
             # Show user message immediately
             with st.chat_message("user"):
