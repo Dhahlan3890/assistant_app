@@ -190,7 +190,7 @@ with st.sidebar:
     st.header("Settings")
     selected_sample = st.selectbox("Select Voice Sample", samples)
     param_4 = st.slider("Max Tokens", min_value=1, max_value=1024, value=256)
-    interaction_mode = st.radio("Interaction Mode", ["Text Input", "Microphone Input"])
+    interaction_mode = st.radio("Interaction Mode", ["Text Input", "Microphone Input", "Continuous Microphone Input (Faster)"])
 
 # Display chat history
 st.write("### Chat History")
@@ -330,7 +330,7 @@ elif interaction_mode == "Continuous Microphone Input (Faster)":
             st.session_state.messages.append({"role": "user", "content": user_input})
             
             # Generate system message
-            system_message = sample_to_message[selected_sample]
+            # system_message = sample_to_message[selected_sample]
             
             try:
                 # Build conversation history string
@@ -346,7 +346,7 @@ elif interaction_mode == "Continuous Microphone Input (Faster)":
                 with st.spinner("Thinking..."):
                     response = client_chat.predict(
                         message=conversation,
-                        system_message=system_message,
+                        system_message="You are a friendly ai assistant",
                         max_tokens=param_4,
                         temperature=0.7,
                         top_p=0.95,
@@ -355,7 +355,7 @@ elif interaction_mode == "Continuous Microphone Input (Faster)":
                 
                 # Show bot response immediately with character name
                 with st.chat_message("bot", avatar="🎭"):
-                    st.markdown(f"**{get_character_name(selected_sample)}**: {response}")
+                    st.markdown(f"{response}")
                 
                 # Update conversation history
                 st.session_state.messages.append({
