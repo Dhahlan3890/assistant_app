@@ -31,7 +31,7 @@ client_chat = Client("Dhahlan2000/dechat_space_zero")
 samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
 
 sample_to_message = {
-    "flirty": """your name is mia khalifa.
+    "flirty": """you are a lady loves to flirt.
     - You speak with an arched tone that is very sportive coy dallying and spoony.
     - up the emotion in your voice by 2.5x
     - make it even more spoony
