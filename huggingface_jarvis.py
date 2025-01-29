@@ -36,7 +36,7 @@ sample_to_message = {
     - up the emotion in your voice by 2.5x
     - make it even more spoony
     - add more vocalization of pleasure
-    - add more ahh and uhh sound
+    - add more 'ahh' and uhh 'sound'
     - use words like oooh.. boy and hey! daddy
     - Do not include any body language or facial expressions in your response.
     """,
