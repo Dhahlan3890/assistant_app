@@ -5,13 +5,23 @@ from gradio_client import Client, handle_file
 # import speech_recognition as sr
 import streamlit as st
 from st_audiorec import st_audiorec
-from gradio_client import Client
+# from gradio_client import Client
 import io
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.playback import play
 import os
 from gtts import gTTS
+from dotenv import load_dotenv
+import os
+import wave
+import speech_recognition as sr
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+
+# Load environment variables
+load_dotenv()
 
 
 # login(token="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")
@@ -23,7 +33,7 @@ if "messages" not in st.session_state:
 
 # Initialize Gradio Clients
 client_tts = Client("mrfakename/E2-F5-TTS")
-client_whisper = Client("mrfakename/fast-whisper-turbo")
+# client_whisper = Client("mrfakename/fast-whisper-turbo")
 # client_chat = Client("suayptalha/Chat-with-FastLlama")
 client_chat = Client("Dhahlan2000/dechat_space_zero")
 
@@ -124,28 +134,33 @@ sample_to_message = {
 
 
 def transcribe_audio(audio_data: bytes) -> str:
-    """Transcribe audio using SpeechRecognition."""
+    """Transcribe audio from bytes using SpeechRecognition and Google Web Speech API."""
     recognizer = sr.Recognizer()
+    temp_filename = "temp_audio.wav"
+
     try:
-        # Convert byte data to a WAV file
-        audio_file = io.BytesIO(audio_data)
-        audio_file.name = "audio.wav"  # Necessary for some libraries
-        with open("temp_audio.wav", "wb") as temp_file:
-            temp_file.write(audio_file.read())
+        # Save byte data to a temporary WAV file
+        with open(temp_filename, "wb") as f:
+            f.write(audio_data)
 
         # Load the WAV file for transcription
-        with sr.AudioFile("temp_audio.wav") as source:
+        with sr.AudioFile(temp_filename) as source:
             audio = recognizer.record(source)
-            transcription = recognizer.recognize_google(audio)  # Use Google's Web Speech API
-            return transcription
+
+        # Transcribe the audio using Google Speech Recognition
+        transcription = recognizer.recognize_google(audio)
+        return transcription
+
     except sr.UnknownValueError:
-        return "Sorry, I could not understand the audio."
+        return "❌ Sorry, I could not understand the audio."
     except sr.RequestError as e:
-        return f"Could not request results; {e}"
+        return f"⚠️ Could not request results; {e}"
+    except Exception as e:
+        return f"❗ Unexpected error: {str(e)}"
     finally:
-        # Clean up temporary files
-        if os.path.exists("temp_audio.wav"):
-            os.remove("temp_audio.wav")
+        # Clean up the temporary WAV file
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
 
 
 
@@ -164,11 +179,41 @@ def text_to_speech(text, sample):
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
+# Set up the wave file to save the output:
+def wave_file(filename, pcm, channels=1, rate=24000, sample_width=2):
+   with wave.open(filename, "wb") as wf:
+      wf.setnchannels(channels)
+      wf.setsampwidth(sample_width)
+      wf.setframerate(rate)
+      wf.writeframes(pcm)
+
 def text_to_speech_gtts(text):
-    tts = gTTS(text)
-    audio_file = "voice_output.mp3"
-    tts.save(audio_file)
-    return audio_file
+
+    client = genai.Client()
+
+    response = client.models.generate_content(
+    model="gemini-2.5-flash-preview-tts",
+    contents=f"Say cheerfully: {text}",
+    config=types.GenerateContentConfig(
+        response_modalities=["AUDIO"],
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                voice_name='Kore',
+                )
+            )
+        ),
+    )
+    )
+
+    data = response.candidates[0].content.parts[0].inline_data.data
+
+    file_name='voice_output.mp3'
+    wave_file(file_name, data) # Saves the file to current directory
+
+    return file_name
+
+
 
 # Add a function to get character name from sample
 def get_character_name(sample):
