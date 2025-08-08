@@ -278,6 +278,8 @@ if interaction_mode == "Text Input":
                 response = client.models.generate_content(
                     model="gemini-2.5-flash", contents="Explain how AI works in a few words"
                 )
+
+                response = response.text
             
             # Show bot response immediately with character name
             with st.chat_message("bot", avatar="🎭"):
