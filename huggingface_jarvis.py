@@ -35,7 +35,8 @@ if "messages" not in st.session_state:
 client_tts = Client("mrfakename/E2-F5-TTS")
 # client_whisper = Client("mrfakename/fast-whisper-turbo")
 # client_chat = Client("suayptalha/Chat-with-FastLlama")
-client_chat = Client("Dhahlan2000/dechat_space_zero")
+# client_chat = Client("Dhahlan2000/dechat_space_zero")
+client = genai.Client()
 
 # Mapping of samples to system messages
 samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
@@ -274,13 +275,8 @@ if interaction_mode == "Text Input":
             
             # Show "thinking" spinner while generating response
             with st.spinner("Thinking..."):
-                response = client_chat.predict(
-                    message=conversation,
-                    system_message=system_message,
-                    max_tokens=param_4,
-                    temperature=0.7,
-                    top_p=0.95,
-                    api_name="/chat"
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash", contents="Explain how AI works in a few words"
                 )
             
             # Show bot response immediately with character name
