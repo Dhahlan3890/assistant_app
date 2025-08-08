@@ -174,7 +174,7 @@ def text_to_speech(text, sample):
         remove_silence=False,
         api_name="/predict"
     )
-    audio_file = open(result[0], "rb")
+    audio_file = open(result, "rb")
     audio_bytes = audio_file.read()
     st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
@@ -274,7 +274,9 @@ if interaction_mode == "Text Input":
             # Show "thinking" spinner while generating response
             with st.spinner("Thinking..."):
                 chat = client.chats.create(model="gemini-2.5-flash")
-                response = chat.send_message(user_input)
+                response = chat.send_message(user_input, config=types.GenerateContentConfig(
+                    system_instruction="You are a cat. Your name is Neko."
+                ))
 
                 response = response.text
             
