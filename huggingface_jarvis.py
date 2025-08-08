@@ -174,7 +174,7 @@ def text_to_speech(text, sample):
         remove_silence=False,
         cross_fade_duration_slider=0.15,
         speed_slider=1,
-        api_name="/basic_tts"
+        api_name="/predict"
     )
     audio_file = open(result[0], "rb")
     audio_bytes = audio_file.read()
