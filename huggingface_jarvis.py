@@ -275,9 +275,8 @@ if interaction_mode == "Text Input":
             
             # Show "thinking" spinner while generating response
             with st.spinner("Thinking..."):
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash", contents="Explain how AI works in a few words"
-                )
+                chat = client.chats.create(model="gemini-2.5-flash")
+                response = chat.send_message(user_input)
 
                 response = response.text
             
@@ -330,14 +329,10 @@ elif interaction_mode == "Microphone Input":
                 
                 # Show "thinking" spinner while generating response
                 with st.spinner("Thinking..."):
-                    response = client_chat.predict(
-                        message=conversation,
-                        system_message=system_message,
-                        max_tokens=param_4,
-                        temperature=0.7,
-                        top_p=0.95,
-                        api_name="/chat"
-                    )
+                    chat = client.chats.create(model="gemini-2.5-flash")
+                    response = chat.send_message(user_input)
+
+                    response = response.text
                 
                 # Show bot response immediately with character name
                 with st.chat_message("bot", avatar="🎭"):
@@ -388,14 +383,10 @@ elif interaction_mode == "Continuous Microphone Input (Faster)":
                 
                 # Show "thinking" spinner while generating response
                 with st.spinner("Thinking..."):
-                    response = client_chat.predict(
-                        message=conversation,
-                        system_message="You are a friendly ai assistant",
-                        max_tokens=param_4,
-                        temperature=0.7,
-                        top_p=0.95,
-                        api_name="/chat"
-                    )
+                    chat = client.chats.create(model="gemini-2.5-flash")
+                    response = chat.send_message(user_input)
+
+                    response = response.text
                 
                 # Show bot response immediately with character name
                 with st.chat_message("bot", avatar="🎭"):
