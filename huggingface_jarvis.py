@@ -168,12 +168,10 @@ def transcribe_audio(audio_data: bytes) -> str:
 # Function to convert text to speech
 def text_to_speech(text, sample):
     result = client_tts.predict(
-        ref_audio_input=handle_file(f'input/{sample}.mp3'),
-        ref_text_input="",
-        gen_text_input=text,
+        ref_audio=handle_file(f'input/{sample}.mp3'),
+        ref_text="",
+        gen_text=text,
         remove_silence=False,
-        cross_fade_duration_slider=0.15,
-        speed_slider=1,
         api_name="/predict"
     )
     audio_file = open(result[0], "rb")
