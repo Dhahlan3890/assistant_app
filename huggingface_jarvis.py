@@ -39,7 +39,7 @@ client_tts = Client("mrfakename/E2-F5-TTS")
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Mapping of samples to system messages
-samples = ["madara", "flirty", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
+samples = ["flirty", "madara", "shy_girl", "tony_stark", "tobi", "obito", "deadpool"]
 
 sample_to_message = {
     "flirty": """you are a girl who loves to flirt with everyone.
