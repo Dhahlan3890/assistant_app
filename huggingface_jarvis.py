@@ -275,7 +275,7 @@ if interaction_mode == "Text Input":
             with st.spinner("Thinking..."):
                 chat = client.chats.create(model="gemini-2.5-flash")
                 response = chat.send_message(user_input, config=types.GenerateContentConfig(
-                    system_instruction="You are a cat. Your name is Neko."
+                    system_instruction=system_message,
                 ))
 
                 response = response.text
